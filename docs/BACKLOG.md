@@ -22,6 +22,7 @@ Tech debt is ranked in the **same list** as features. It competes for the same c
 | OD-6 | As a lead I see MTTR (30d) and 24h uptime per service | E4 |
 | OD-7 | CI pipeline: lint, unit tests, e2e smoke test, image publishing | E5 |
 | OD-9 | **Authentication** for write endpoints: admin API key; APIs internal-only behind the dashboard proxy | E5 |
+| OD-18 | SSRF guard: http(s) only, no redirects, private/link-local/metadata ranges blocked unless allow-listed, generic error codes | E5 |
 | OD-20 | Public live demo on Fly.io with continuous deployment from `main` | E5 |
 
 ## Ready / prioritised
@@ -34,8 +35,9 @@ Tech debt is ranked in the **same list** as features. It competes for the same c
 | 6 | OD-13 | Incident detail page with timeline and notes in the dashboard | Feature | 6 | 1 | 100% | 1 | **6.0** |
 | 7 | OD-14 | Split the incident consumer into its own deployable (see ADR-0003) | Debt | 3 | 1 | 70% | 1 | **2.1** |
 | 2 | OD-17 | **Database backups**: nightly `pg_dump` to object storage + a tested restore (the Fly DB is a single node on one volume) | Debt / ops | 10 | 3 | 90% | 1 | **27.0** → do next |
-| 9 | OD-18 | **SSRF guard**: the worker fetches admin-supplied URLs from inside the private network; block private/link-local ranges unless allow-listed | Debt / security | 10 | 2 | 80% | 1 | **16.0** |
+| 9 | OD-18b | **SSRF: DNS rebinding.** The destination check resolves DNS, then `fetch` resolves again; pin the validated IP via a custom dispatcher | Debt / security | 10 | 1 | 70% | 1 | **7.0** |
 | 10 | OD-19 | Per-user identity (GitHub/SSO) instead of one shared key, so the incident timeline shows real authors | Feature | 6 | 1 | 80% | 3 | **1.6** |
+| 3 | OD-21 | **Chaos step in e2e**: restart Postgres and Redis mid-run and assert services recover (from the [crash-on-DB-restart postmortem](postmortems/2026-11-05-crash-on-db-restart.md)) | Debt / reliability | 10 | 2 | 90% | 0.5 | **36.0** |
 | 8 | OD-15 | Per-service check interval and custom expected status | Feature | 4 | 0.5 | 80% | 1 | **1.6** |
 
 ### Example story with acceptance criteria. OD-8, failure threshold

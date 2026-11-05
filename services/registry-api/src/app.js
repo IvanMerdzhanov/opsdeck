@@ -6,7 +6,7 @@ export function createApp({ db, redis, checksQueue, logger, adminKey }) {
   const app = express();
   const admin = requireApiKey(adminKey);
   app.use(express.json());
-  mountProbes(app, { db, redis });
+  mountProbes(app, { db, redis, logger });
 
   async function findService(id) {
     const { rows } = await db.query('SELECT * FROM services WHERE id = $1', [id]);

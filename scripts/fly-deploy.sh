@@ -67,7 +67,8 @@ deploy demo demo --dockerfile Dockerfile --build-arg SERVICE=demo-target
 deploy registry registry --dockerfile Dockerfile --build-arg SERVICE=registry-api \
   --env DEMO_TARGET_URL="http://$P-demo.internal:4000/health"
 deploy incidents incidents --dockerfile Dockerfile --build-arg SERVICE=incident-api
-deploy worker worker --dockerfile Dockerfile --build-arg SERVICE=monitor-worker
+deploy worker worker --dockerfile Dockerfile --build-arg SERVICE=monitor-worker \
+  --env ALLOWED_INTERNAL_HOSTS="$P-demo.internal"
 deploy web web --dockerfile services/dashboard/Dockerfile \
   --env REGISTRY_UPSTREAM="http://$P-registry.internal:3001" \
   --env INCIDENTS_UPSTREAM="http://$P-incidents.internal:3002" \

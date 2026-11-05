@@ -29,7 +29,7 @@ export function createApp({ db, redis, logger, adminKey }) {
   const app = express();
   const admin = requireApiKey(adminKey);
   app.use(express.json());
-  mountProbes(app, { db, redis });
+  mountProbes(app, { db, redis, logger });
 
   async function findIncident(id) {
     const { rows } = await db.query(

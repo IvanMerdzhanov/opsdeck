@@ -4,12 +4,12 @@ import { createApp } from './app.js';
 import { handleEvent } from './consumer.js';
 
 const logger = createLogger('incident-api');
-const db = createDb();
-const redis = createRedis();
+const db = createDb({ logger });
+const redis = createRedis({ logger });
 
 // HTTP API and event consumer share one process for now; see docs/adr/0003.
 const consumer = new Worker(QUEUES.EVENTS, (job) => handleEvent({ db, logger }, job.name, job.data), {
-  connection: createRedis(),
+  connection: createRedis({ logger }),
   concurrency: 1,
 });
 consumer.on('failed', (job, err) => logger.error({ event: job?.name, err }, 'event handling failed'));

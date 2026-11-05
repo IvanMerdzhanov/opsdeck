@@ -38,6 +38,7 @@ services:
     restart: "no"
 
   registry-api:
+    restart: unless-stopped
     build: { context: ., args: { SERVICE: registry-api } }
     environment: { <<: *node-env, PORT: 3001 }
     ports: ["3001:3001"]
@@ -48,6 +49,7 @@ services:
       retries: 20
 
   incident-api:
+    restart: unless-stopped
     build: { context: ., args: { SERVICE: incident-api } }
     environment: { <<: *node-env, PORT: 3002 }
     ports: ["3002:3002"]
@@ -58,11 +60,13 @@ services:
       retries: 20
 
   monitor-worker:
+    restart: unless-stopped
     build: { context: ., args: { SERVICE: monitor-worker } }
-    environment: { <<: *node-env, CHECK_INTERVAL_MS: 10000, CHECK_TIMEOUT_MS: 3000 }
+    environment: { <<: *node-env, CHECK_INTERVAL_MS: 10000, CHECK_TIMEOUT_MS: 3000, ALLOWED_INTERNAL_HOSTS: demo-target }
     depends_on: *depends
 
   demo-target:
+    restart: unless-stopped
     build: { context: ., args: { SERVICE: demo-target } }
     ports: ["4000:4000"]
     healthcheck:

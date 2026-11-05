@@ -3,8 +3,8 @@ import { QUEUES, createDb, createLogger, createRedis } from '@opsdeck/shared';
 import { createApp } from './app.js';
 
 const logger = createLogger('registry-api');
-const db = createDb();
-const redis = createRedis();
+const db = createDb({ logger });
+const redis = createRedis({ logger });
 const checksQueue = new Queue(QUEUES.CHECKS, { connection: redis });
 
 const app = createApp({ db, redis, checksQueue, logger, adminKey: process.env.ADMIN_API_KEY });

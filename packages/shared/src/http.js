@@ -7,7 +7,7 @@ export class HttpError extends Error {
 }
 
 // Liveness (/health) says the process is up; readiness (/ready) says its dependencies are reachable.
-export function mountProbes(app, { db, redis }) {
+export function mountProbes(app, { db, redis, logger }) {
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
   app.get('/ready', async (_req, res) => {
     try {
@@ -15,7 +15,8 @@ export function mountProbes(app, { db, redis }) {
       if (redis) await redis.ping();
       res.json({ status: 'ready' });
     } catch (err) {
-      res.status(503).json({ status: 'not_ready', error: err.message });
+      logger?.warn({ err }, 'readiness check failed');
+      res.status(503).json({ status: 'not_ready' });
     }
   });
 }

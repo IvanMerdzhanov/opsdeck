@@ -66,7 +66,8 @@ curl -XPATCH localhost:3002/incidents/<id> -H 'content-type: application/json' \
 - The **only public app is the dashboard** (nginx). The APIs, worker, Postgres and Redis are only on Fly's private network.
 - **Reads are public; writes need an admin API key** (`x-api-key`, constant-time compare). With no key configured, writes are disabled, not open.
 - Public demo actions (breaking demo-target, running a check) are **rate-limited** at the proxy.
-- Known gaps, prioritised in the backlog: DB backups (OD-17), SSRF guard for monitored URLs (OD-18), per-user identity (OD-19).
+- The monitor **won't call private, loopback, link-local or metadata addresses**, doesn't follow redirects, and stores only generic error codes (except allow-listed hosts like demo-target).
+- Known gaps, prioritised in the backlog: DB backups (OD-17), DNS-rebinding hardening (OD-18b), per-user identity (OD-19).
 
 ## Deploy (Fly.io)
 
