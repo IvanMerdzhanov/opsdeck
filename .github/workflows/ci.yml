@@ -38,43 +38,33 @@ jobs:
         if: always()
         run: docker compose down -v
 
-  e2e-all-in-one:
-    name: End-to-end smoke test (all-in-one build, what Render deploys)
+  e2e-demo:
+    name: End-to-end smoke test (bundled demo image, what Render runs)
     needs: test
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env: { POSTGRES_USER: opsdeck, POSTGRES_PASSWORD: opsdeck, POSTGRES_DB: opsdeck }
-        ports: ["5432:5432"]
-        options: --health-cmd "pg_isready -U opsdeck" --health-interval 3s --health-retries 20
-      redis:
-        image: redis:7-alpine
-        ports: ["6379:6379"]
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: docker build -f deploy/all-in-one.Dockerfile -t opsdeck-aio .
-      - name: Start
+        run: docker build -f deploy/demo-bundled.Dockerfile -t opsdeck-demo .
+      - name: Start (at Render free-tier size)
         run: |
-          docker run -d --name aio --network host \
-            -e DATABASE_URL=postgres://opsdeck:opsdeck@localhost:5432/opsdeck \
-            -e REDIS_URL=redis://localhost:6379 \
-            -e ADMIN_API_KEY=ci-admin-key -e CHECK_INTERVAL_MS=10000 opsdeck-aio
-          for i in $(seq 1 60); do curl -sf localhost:10000/healthz && exit 0; sleep 1; done; exit 1
+          docker run -d --name demo -p 10000:10000 --cpus=0.1 --memory=512m \
+            -e ADMIN_API_KEY=ci-admin-key -e CHECK_INTERVAL_MS=10000 opsdeck-demo
+          for i in $(seq 1 120); do curl -sf localhost:10000/healthz && exit 0; sleep 1; done; exit 1
       - name: Smoke test
         run: bash scripts/smoke.sh
         env:
           REGISTRY: http://localhost:10000/api/registry
           INCIDENTS: http://localhost:10000/api/incidents
           CHAOS_URL: http://localhost:10000/api/demo/chaos
+          SMOKE_TIMEOUT: "90"
       - name: Logs on failure
         if: failure()
-        run: docker logs aio
+        run: docker logs demo
 
   publish:
     name: Build & push images
-    needs: [e2e, e2e-all-in-one]
+    needs: [e2e, e2e-demo]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write }

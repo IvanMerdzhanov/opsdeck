@@ -1,6 +1,6 @@
 # ADR-0005: Free public demo as one service (Render + Neon + Upstash)
 
-**Status:** Accepted · **Date:** 2026-11-05 · **Supersedes (for the demo):** ADR-0004
+**Status:** Accepted, amended by [ADR-0006](0006-bundled-ephemeral-demo-stores.md) (stores bundled in the image) · **Date:** 2026-11-05 · **Supersedes (for the demo):** ADR-0004
 
 ## Context
 The Fly.io plan (ADR-0004) costs about $12–15 a month. The demo's audience is a handful of recruiters

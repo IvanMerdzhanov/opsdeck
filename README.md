@@ -4,7 +4,7 @@ An internal **service toolchain**: register the services your team owns, monitor
 automatically, get incidents opened and resolved on state changes, and track MTTR and uptime.
 
 **Live demo:** _(link added after first deploy)_. Press **Break demo-target** and watch it happen.
-Runs on free hosting, so the first load after idle takes ~30–50s while it wakes up.
+Runs on free hosting, so the first load after idle takes ~30–60s while it wakes up, and the demo data resets each time.
 
 Built as a portfolio project for **technical product ownership**. The code is half of it;
 the [product docs](#product-docs) show how it is prioritised, decided and operated.
@@ -73,13 +73,18 @@ curl -XPATCH localhost:3002/incidents/<id> -H 'content-type: application/json' \
 
 ## Deploy
 
-**Free (current live demo):** Render free web service + Neon Postgres + Upstash Redis, running every
-module in one process (`services/all-in-one`, [ADR-0005](docs/adr/0005-free-single-service-hosting.md)).
-1. Create a free Neon database and a free Upstash Redis database; copy their connection URLs.
-2. Render → **New → Blueprint** → pick this repo. It reads `render.yaml` and asks for `DATABASE_URL` and `REDIS_URL`.
-3. Render generates `ADMIN_API_KEY`; copy it from the service's **Environment** tab into the dashboard's Admin box.
+**Free (current live demo):** a single Render free web service built from
+[`deploy/demo-bundled.Dockerfile`](deploy/demo-bundled.Dockerfile): every module in one process
+(`services/all-in-one`), plus Postgres and Redis inside the container on loopback, with fresh seeded data on each boot
+([ADR-0005](docs/adr/0005-free-single-service-hosting.md), [ADR-0006](docs/adr/0006-bundled-ephemeral-demo-stores.md)).
+The only setting is `ADMIN_API_KEY` (Render can generate it). Try it locally:
 
-Pushes to `main` deploy only after CI is green (`autoDeployTrigger: checksPass`).
+```bash
+docker build -f deploy/demo-bundled.Dockerfile -t opsdeck-demo .
+docker run -p 10000:10000 -e ADMIN_API_KEY=local-dev-admin-key opsdeck-demo   # → http://localhost:10000
+```
+
+**With managed databases:** `deploy/all-in-one.Dockerfile` + `DATABASE_URL` / `REDIS_URL` (e.g. Neon + Upstash).
 
 **Production-like (paid):** each service as its own app on Fly.io, private networking, one public proxy.
 `FLY_APP_PREFIX=opsdeck-<you> scripts/fly-deploy.sh`. See [ADR-0004](docs/adr/0004-hosting-on-fly.md).
