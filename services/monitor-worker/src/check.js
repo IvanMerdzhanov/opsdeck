@@ -2,7 +2,9 @@ import { BlockedDestinationError, assertSafeDestination } from './destination.js
 
 // Stable, non-sensitive error codes: check history is public, so raw error text is never stored.
 function classify(err, timeoutMs) {
-  if (err instanceof BlockedDestinationError) return 'blocked_destination';
+  if (err instanceof BlockedDestinationError || err.cause instanceof BlockedDestinationError) {
+    return 'blocked_destination';
+  }
   if (err.name === 'TimeoutError') return `timeout after ${timeoutMs}ms`;
   const code = err.cause?.code ?? err.code;
   if (code === 'ECONNREFUSED') return 'connection_refused';

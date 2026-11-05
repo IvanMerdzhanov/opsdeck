@@ -1,7 +1,7 @@
 import { runCheck } from './check.js';
 import { detectTransition } from './state.js';
 
-export async function checkService({ db, eventsQueue, logger, timeoutMs, allowedHosts }, serviceId) {
+export async function checkService({ db, eventsQueue, logger, timeoutMs, allowedHosts, fetchImpl }, serviceId) {
   const { rows: [service] } = await db.query('SELECT id, name, url FROM services WHERE id = $1', [serviceId]);
   if (!service) return { skipped: 'service_not_found' };
 
@@ -10,7 +10,7 @@ export async function checkService({ db, eventsQueue, logger, timeoutMs, allowed
     [serviceId],
   );
 
-  const result = await runCheck(service.url, { timeoutMs, allowedHosts });
+  const result = await runCheck(service.url, { timeoutMs, allowedHosts, fetchImpl });
   await db.query(
     `INSERT INTO checks (service_id, status, status_code, latency_ms, error)
      VALUES ($1, $2, $3, $4, $5)`,
