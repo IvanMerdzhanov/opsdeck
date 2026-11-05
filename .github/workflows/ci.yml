@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:   # "Run workflow" button: full test + redeploy without a code change
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -96,7 +97,7 @@ jobs:
     name: Deploy live demo to Hugging Face Spaces
     needs: [e2e, e2e-demo]
     # Only on main, and only once the repo has the HF_SPACE variable and HF_TOKEN secret.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.HF_SPACE != ''
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.HF_SPACE != ''
     runs-on: ubuntu-latest
     environment: demo
     concurrency: { group: deploy-demo, cancel-in-progress: false }
