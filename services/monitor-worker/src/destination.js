@@ -17,18 +17,25 @@ for (const [net, prefix] of [['::', 128], ['::1', 128], ['64:ff9b::', 96],
 
 export const isBlockedAddress = (address) => blocked.check(address, isIP(address) === 6 ? 'ipv6' : 'ipv4');
 
+// Allow-list entries are exact origins, "host:port" (e.g. "demo-target:4000"). Matching on host alone
+// would let a registered URL reach any other port on that host, such as Redis or Postgres on loopback.
 export const allowedHostsFromEnv = (value = process.env.ALLOWED_INTERNAL_HOSTS ?? '') =>
   new Set(value.split(',').map((h) => h.trim().toLowerCase()).filter(Boolean));
+
+const DEFAULT_PORTS = { 'http:': '80', 'https:': '443' };
+const originOf = ({ protocol, hostname, port }) =>
+  `${hostname.replace(/^\[|\]$/g, '').toLowerCase()}:${port || DEFAULT_PORTS[protocol]}`;
+const hostsOf = (allowedOrigins) => new Set([...allowedOrigins].map((o) => o.slice(0, o.lastIndexOf(':'))));
 
 export class BlockedDestinationError extends Error {}
 
 // Fast pre-flight check: http(s) only, and every resolved address public (or host allow-listed).
 // Enforcement against DNS rebinding happens in guardedLookup, at connect time.
 export async function assertSafeDestination(url, { allowedHosts = new Set(), lookupImpl = lookup } = {}) {
-  const { protocol, hostname } = new URL(url);
-  if (protocol !== 'http:' && protocol !== 'https:') throw new BlockedDestinationError('protocol');
-  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase();
-  if (allowedHosts.has(host)) return;
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new BlockedDestinationError('protocol');
+  if (allowedHosts.has(originOf(parsed))) return;
+  const host = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase();
   if (host.endsWith('.internal') || host === 'localhost') throw new BlockedDestinationError('host');
   const addresses = isIP(host) ? [{ address: host }] : await lookupImpl(host, { all: true });
   if (addresses.length === 0 || addresses.some(({ address }) => isBlockedAddress(address))) {
@@ -36,14 +43,16 @@ export async function assertSafeDestination(url, { allowedHosts = new Set(), loo
   }
 }
 
-// DNS lookup used for the actual TCP connection. It validates the very addresses the socket will
+// DNS lookup used for the actual TCP connection. It only sees hostnames; ports are enforced by
+// assertSafeDestination on the same URL (redirects are never followed, so the URL can't change). It validates the very addresses the socket will
 // connect to, so a hostname can't pass the pre-check with a public IP, then connect to a private one.
 // (IP-literal URLs skip DNS entirely and are fully covered by assertSafeDestination.)
 export function createGuardedLookup({ allowedHosts = new Set(), dnsLookup = dns.lookup } = {}) {
+  const allowedHostnames = hostsOf(allowedHosts);
   return (hostname, options, callback) => {
     dnsLookup(hostname, { ...options, all: true }, (err, addresses) => {
       if (err) return callback(err);
-      const allowed = allowedHosts.has(hostname.toLowerCase());
+      const allowed = allowedHostnames.has(hostname.toLowerCase());
       if (!allowed && (addresses.length === 0 || addresses.some(({ address }) => isBlockedAddress(address)))) {
         return callback(new BlockedDestinationError('address'));
       }

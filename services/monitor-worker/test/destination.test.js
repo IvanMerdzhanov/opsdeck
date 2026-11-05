@@ -22,7 +22,7 @@ describe('createGuardedLookup (connect-time enforcement)', () => {
 
   it('lets allow-listed internal hosts through', async () => {
     const dnsLookup = (_h, _o, cb) => cb(null, [{ address: '172.18.0.4', family: 4 }]);
-    const guarded = createGuardedLookup({ dnsLookup, allowedHosts: new Set(['demo-target']) });
+    const guarded = createGuardedLookup({ dnsLookup, allowedHosts: new Set(['demo-target:4000']) });
     expect(await lookupOnce(guarded, 'demo-target')).toEqual({ err: null, address: '172.18.0.4' });
   });
 });
@@ -46,7 +46,7 @@ describe('createGuardedFetch (real socket)', () => {
   });
 
   it('connects when the host is allow-listed', async () => {
-    const guardedFetch = createGuardedFetch({ dnsLookup, allowedHosts: new Set(['service.test']) });
+    const guardedFetch = createGuardedFetch({ dnsLookup, allowedHosts: new Set([`service.test:${port}`]) });
     const res = await guardedFetch(`http://service.test:${port}/`);
     expect(await res.text()).toBe('ok');
   });

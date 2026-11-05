@@ -36,7 +36,7 @@ const monitor = await startMonitor({
   logger,
   intervalMs: Number(env.CHECK_INTERVAL_MS ?? 30000),
   timeoutMs: Number(env.CHECK_TIMEOUT_MS ?? 5000),
-  allowedHosts: new Set(['127.0.0.1']), // only the in-process demo target; everything else must be public
+  allowedHosts: new Set([`127.0.0.1:${demoPort}`]), // only the demo target's exact origin; everything else must be public
   workerOptions: leanWorker,
 });
 const consumer = startConsumer({ db, logger, workerOptions: leanWorker });

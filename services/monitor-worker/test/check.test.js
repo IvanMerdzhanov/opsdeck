@@ -67,11 +67,27 @@ describe('runCheck', () => {
 
   it('allows explicitly allow-listed internal hosts', async () => {
     const result = await runCheck('http://demo-target:4000/health', {
-      allowedHosts: new Set(['demo-target']),
+      allowedHosts: new Set(['demo-target:4000']),
       fetchImpl: async () => ({ status: 200 }),
       now: clock(),
     });
     expect(result.status).toBe('up');
+  });
+
+  it.each([
+    ['http://demo-target:6379/', 'other port on an allow-listed host'],
+    ['http://127.0.0.1:5432/', 'loopback Postgres next to an allow-listed loopback origin'],
+  ])('blocks %s (%s)', async (url) => {
+    const fetchImpl = async () => {
+      throw new Error('must not be called');
+    };
+    const result = await runCheck(url, {
+      allowedHosts: new Set(['demo-target:4000', '127.0.0.1:4000']),
+      lookupImpl: async () => [{ address: '172.18.0.4', family: 4 }], // how Docker resolves demo-target
+      fetchImpl,
+      now: clock(),
+    });
+    expect(result.error).toBe('blocked_destination');
   });
 });
 

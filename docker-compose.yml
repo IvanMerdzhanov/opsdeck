@@ -62,7 +62,7 @@ services:
   monitor-worker:
     restart: unless-stopped
     build: { context: ., args: { SERVICE: monitor-worker } }
-    environment: { <<: *node-env, CHECK_INTERVAL_MS: 10000, CHECK_TIMEOUT_MS: 3000, ALLOWED_INTERNAL_HOSTS: demo-target }
+    environment: { <<: *node-env, CHECK_INTERVAL_MS: 10000, CHECK_TIMEOUT_MS: 3000, ALLOWED_INTERNAL_HOSTS: "demo-target:4000" }
     depends_on: *depends
 
   demo-target:
