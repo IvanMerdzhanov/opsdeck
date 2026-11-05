@@ -25,7 +25,8 @@ trap reset EXIT
 
 code=$(curl -s -o /dev/null -w '%{http_code}' -XPOST "$REGISTRY/services" -H 'content-type: application/json' \
   -d '{"name":"intruder","url":"http://x","owner":"x"}')
-[ "$code" = "401" ] && echo "✓ writes rejected without API key" || { echo "✗ expected 401, got $code"; exit 1; }
+# 401 = key configured but missing from the request; 503 = no key configured, so writes are disabled.
+case "$code" in 401|503) echo "✓ writes rejected without API key ($code)" ;; *) echo "✗ expected 401/503, got $code"; exit 1 ;; esac
 
 SERVICE_ID=$(curl -sf "$REGISTRY/services" | json "v.find(s => s.name === 'demo-target').id")
 echo "demo-target id: $SERVICE_ID"
