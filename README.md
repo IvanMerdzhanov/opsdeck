@@ -3,8 +3,9 @@
 An internal **service toolchain**: register the services your team owns, monitor their health
 automatically, get incidents opened and resolved on state changes, and track MTTR and uptime.
 
-**Live demo:** _(link added after first deploy)_. Press **Break demo-target** and watch it happen.
-Hosted free on Hugging Face Spaces: after 48h without visitors it sleeps and the first load takes a minute. Demo data resets on every restart.
+**Live demo:** https://ivanmerdzhanov.github.io/opsdeck/. Press **Break demo-target** and watch it happen.
+The live demo runs the real dashboard against a simulated backend in your browser (free static hosting).
+The real stack runs with one command: see [Deploy](#deploy).
 
 Built as a portfolio project for **technical product ownership**. The code is half of it;
 the [product docs](#product-docs) show how it is prioritised, decided and operated.
@@ -73,14 +74,12 @@ curl -XPATCH localhost:3002/incidents/<id> -H 'content-type: application/json' \
 
 ## Deploy
 
-**Free (current live demo):** Hugging Face Spaces, built from
-[`deploy/demo-bundled.Dockerfile`](deploy/demo-bundled.Dockerfile): every module in one process
-(`services/all-in-one`), plus Postgres and Redis inside the container on loopback, with fresh seeded data on each boot
-([ADR-0005](docs/adr/0005-free-single-service-hosting.md), [ADR-0006](docs/adr/0006-bundled-ephemeral-demo-stores.md)).
-CI publishes it from `main` after the end-to-end tests pass (repo variable `HF_SPACE`, secret `HF_TOKEN`).
-Optional: set an `ADMIN_API_KEY` secret in the Space settings to enable admin actions; without it writes are disabled.
+**Live demo (GitHub Pages, free):** the real dashboard plus `services/dashboard/demo-backend.js`, an in-browser
+simulation of the APIs that follows the same rules (transition-only incidents, auto-resolve, MTTR and uptime from history).
+CI publishes it from `main` after all end-to-end suites pass ([ADR-0007](docs/adr/0007-static-demo-on-github-pages.md)).
 
-Run the same image locally:
+**Full stack in one container** (Postgres and Redis bundled, fresh data each boot; [ADR-0006](docs/adr/0006-bundled-ephemeral-demo-stores.md)).
+It runs on any Docker host:
 
 ```bash
 docker build -f deploy/demo-bundled.Dockerfile -t opsdeck-demo .

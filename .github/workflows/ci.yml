@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:   # "Run workflow" button: full test + redeploy without a code change
+  workflow_dispatch:   # "Run workflow" button: full test + republish without a code change
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -93,34 +93,20 @@ jobs:
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
 
-  deploy-demo:
-    name: Deploy live demo to Hugging Face Spaces
+  pages:
+    name: Publish live demo (GitHub Pages)
     needs: [e2e, e2e-demo]
-    # Only on main, and only once the repo has the HF_SPACE variable and HF_TOKEN secret.
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.HF_SPACE != ''
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: demo
-    concurrency: { group: deploy-demo, cancel-in-progress: false }
+    permissions: { contents: read, pages: write, id-token: write }
+    environment: { name: github-pages, url: "${{ steps.deploy.outputs.page_url }}" }
+    concurrency: { group: pages, cancel-in-progress: false }
     steps:
       - uses: actions/checkout@v4
-      - name: Assemble Space
-        run: bash scripts/build-hf-space.sh _space
-      - name: Publish
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE: ${{ vars.HF_SPACE }}
-        run: |
-          pip install --quiet "huggingface_hub>=0.30,<1"
-          python - <<'PY'
-          import os
-          from huggingface_hub import HfApi
-          api = HfApi(token=os.environ["HF_TOKEN"])
-          space = os.environ["HF_SPACE"]
-          api.create_repo(space, repo_type="space", space_sdk="docker", exist_ok=True)
-          api.upload_folder(
-              repo_id=space, repo_type="space", folder_path="_space",
-              commit_message=f"Deploy {os.environ['GITHUB_SHA'][:7]} from GitHub CI",
-              delete_patterns=["*"],  # remove files that no longer exist in the build
-          )
-          print(f"deployed: https://huggingface.co/spaces/{space}")
-          PY
+      - name: Build static demo
+        run: bash scripts/build-pages.sh _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deploy
+        uses: actions/deploy-pages@v4

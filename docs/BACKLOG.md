@@ -23,8 +23,9 @@ Tech debt is ranked in the **same list** as features. It competes for the same c
 | OD-7 | CI pipeline: lint, unit tests, e2e smoke test, image publishing | E5 |
 | OD-9 | **Authentication** for write endpoints: admin API key; APIs internal-only behind the dashboard proxy | E5 |
 | OD-18 | SSRF guard: http(s) only, no redirects, private/link-local/metadata ranges blocked unless allow-listed, generic error codes; addresses validated at connect time (DNS-rebinding safe) | E5 |
-| OD-20 | Public live demo on free hosting (Hugging Face Spaces) with bundled, ephemeral Postgres and Redis (ADR-0006) | E5 |
-| OD-23 | Demo auto-deploys from `main` only after both e2e suites pass | E5 |
+| OD-20 | Public live demo on GitHub Pages: real dashboard + in-browser simulated backend (ADR-0007) | E5 |
+| OD-23 | Demo republishes from `main` only after all e2e suites pass | E5 |
+| OD-24 | Single-container full stack (bundled Postgres/Redis), hardened, tested as root and uid 1000 (ADR-0006) | E5 |
 
 ## Ready / prioritised
 | Rank | ID | Item | Type | R | I | C | E | RICE |
@@ -38,7 +39,8 @@ Tech debt is ranked in the **same list** as features. It competes for the same c
 | 2 | OD-17 | **Database backups** for any non-demo deploy (the demo's data is ephemeral by design): scheduled `pg_dump` plus one tested restore | Debt / ops | 10 | 3 | 90% | 1 | **27.0** → do next |
 | 10 | OD-19 | Per-user identity (GitHub/SSO) instead of one shared key, so the incident timeline shows real authors | Feature | 6 | 1 | 80% | 3 | **1.6** |
 | 3 | OD-21 | **Chaos step in e2e**: restart Postgres and Redis mid-run and assert services recover (from the [crash-on-DB-restart postmortem](postmortems/2026-11-05-crash-on-db-restart.md)) | Debt / reliability | 10 | 2 | 90% | 0.5 | **36.0** |
-| 4 | OD-22 | **Keep-warm or upgrade decision**: the free instance sleeps after 15 min idle (~30–50s first load, no monitoring while asleep). Measure recruiter visits before paying | Decision | 3 | 1 | 60% | 0.25 | **7.2** |
+| 4 | OD-22 | **Real hosted backend?** The static demo can't show real network checks. Decide whether interview feedback justifies a paid host | Decision | 3 | 1 | 60% | 0.25 | **7.2** |
+| 6 | OD-25 | **Simulation drift**: the in-browser backend reimplements the rules; share the pure modules (state, metrics) with the browser build so they can't diverge | Debt | 3 | 1 | 80% | 1 | **2.4** |
 | 8 | OD-15 | Per-service check interval and custom expected status | Feature | 4 | 0.5 | 80% | 1 | **1.6** |
 
 ### Example story with acceptance criteria. OD-8, failure threshold

@@ -7,6 +7,7 @@
   <style>
     :root { --bg:#0f1115; --panel:#181b22; --line:#2a2f3a; --text:#e6e8ee; --muted:#8b93a7; --up:#3fb950; --down:#f85149; --warn:#d29922; --accent:#58a6ff; }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; } /* author display rules (e.g. form{display:grid}) would otherwise win */
     body { margin:0; font:14px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--text); }
     header { display:flex; align-items:baseline; gap:16px; padding:16px 24px; border-bottom:1px solid var(--line); }
     header h1 { margin:0; font-size:18px; }
@@ -35,7 +36,6 @@
     header { align-items:center; flex-wrap:wrap; }
     header a { text-decoration:none; }
     #admin-bar { display:flex; gap:8px; flex-wrap:wrap; padding:12px 24px; border-bottom:1px solid var(--line); }
-    #admin-bar[hidden] { display:none; }
     .demo { grid-column: 1 / -1; }
     .demo p { margin:0 0 12px; }
     .demo button { margin:0 8px 8px 0; }
