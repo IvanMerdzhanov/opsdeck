@@ -3,3 +3,7 @@ node_modules/
 coverage/
 .DS_Store
 .fly-secrets
+
+# Local agent tooling (Neon skills)
+.claude/
+skills-lock.json
