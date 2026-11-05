@@ -7,3 +7,4 @@ coverage/
 # Local agent tooling (Neon skills)
 .claude/
 skills-lock.json
+_space/

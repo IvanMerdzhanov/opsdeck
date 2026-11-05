@@ -39,16 +39,19 @@ jobs:
         run: docker compose down -v
 
   e2e-demo:
-    name: End-to-end smoke test (bundled demo image, what Render runs)
+    name: End-to-end smoke test (bundled demo image as ${{ matrix.user }})
     needs: test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        user: [root, "1000"]   # 1000 = how Hugging Face Spaces runs it
     steps:
       - uses: actions/checkout@v4
       - name: Build
         run: docker build -f deploy/demo-bundled.Dockerfile -t opsdeck-demo .
-      - name: Start (at Render free-tier size)
+      - name: Start (at free-tier size)
         run: |
-          docker run -d --name demo -p 10000:10000 --cpus=0.1 --memory=512m \
+          docker run -d --name demo --user ${{ matrix.user }} -p 10000:10000 --cpus=0.1 --memory=512m \
             -e ADMIN_API_KEY=ci-admin-key -e CHECK_INTERVAL_MS=10000 opsdeck-demo
           for i in $(seq 1 120); do curl -sf localhost:10000/healthz && exit 0; sleep 1; done; exit 1
       - name: Smoke test
@@ -88,3 +91,35 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
+
+  deploy-demo:
+    name: Deploy live demo to Hugging Face Spaces
+    needs: [e2e, e2e-demo]
+    # Only on main, and only once the repo has the HF_SPACE variable and HF_TOKEN secret.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.HF_SPACE != ''
+    runs-on: ubuntu-latest
+    environment: demo
+    concurrency: { group: deploy-demo, cancel-in-progress: false }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble Space
+        run: bash scripts/build-hf-space.sh _space
+      - name: Publish
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          pip install --quiet "huggingface_hub>=0.30,<1"
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          space = os.environ["HF_SPACE"]
+          api.create_repo(space, repo_type="space", space_sdk="docker", exist_ok=True)
+          api.upload_folder(
+              repo_id=space, repo_type="space", folder_path="_space",
+              commit_message=f"Deploy {os.environ['GITHUB_SHA'][:7]} from GitHub CI",
+              delete_patterns=["*"],  # remove files that no longer exist in the build
+          )
+          print(f"deployed: https://huggingface.co/spaces/{space}")
+          PY

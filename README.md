@@ -4,7 +4,7 @@ An internal **service toolchain**: register the services your team owns, monitor
 automatically, get incidents opened and resolved on state changes, and track MTTR and uptime.
 
 **Live demo:** _(link added after first deploy)_. Press **Break demo-target** and watch it happen.
-Runs on free hosting, so the first load after idle takes ~30–60s while it wakes up, and the demo data resets each time.
+Hosted free on Hugging Face Spaces: after 48h without visitors it sleeps and the first load takes a minute. Demo data resets on every restart.
 
 Built as a portfolio project for **technical product ownership**. The code is half of it;
 the [product docs](#product-docs) show how it is prioritised, decided and operated.
@@ -73,11 +73,14 @@ curl -XPATCH localhost:3002/incidents/<id> -H 'content-type: application/json' \
 
 ## Deploy
 
-**Free (current live demo):** a single Render free web service built from
+**Free (current live demo):** Hugging Face Spaces, built from
 [`deploy/demo-bundled.Dockerfile`](deploy/demo-bundled.Dockerfile): every module in one process
 (`services/all-in-one`), plus Postgres and Redis inside the container on loopback, with fresh seeded data on each boot
 ([ADR-0005](docs/adr/0005-free-single-service-hosting.md), [ADR-0006](docs/adr/0006-bundled-ephemeral-demo-stores.md)).
-The only setting is `ADMIN_API_KEY` (Render can generate it). Try it locally:
+CI publishes it from `main` after the end-to-end tests pass (repo variable `HF_SPACE`, secret `HF_TOKEN`).
+Optional: set an `ADMIN_API_KEY` secret in the Space settings to enable admin actions; without it writes are disabled.
+
+Run the same image locally:
 
 ```bash
 docker build -f deploy/demo-bundled.Dockerfile -t opsdeck-demo .
