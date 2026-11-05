@@ -1,0 +1,52 @@
+# Rendered by the nginx image's envsubst at startup. Only variables defined in the
+# environment are substituted, so nginx's own $variables are left untouched.
+
+# Public demo actions are rate-limited. On Fly the remote address is Fly's proxy,
+# so this acts as a global limit, which is what we want for a shared demo.
+limit_req_zone $binary_remote_addr zone=demo:1m rate=20r/m;
+limit_req_status 429;
+
+server {
+  listen 80;
+  listen [::]:80;
+  root /usr/share/nginx/html;
+
+  # Resolve upstreams at request time (Docker DNS locally, Fly 6PN DNS in production).
+  resolver ${RESOLVER};
+
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy same-origin always;
+  add_header X-Frame-Options DENY always;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  client_max_body_size 16k;
+
+  location = /healthz { access_log off; return 200 'ok'; }
+
+  location ~ ^/api/registry/services/[^/]+/diagnostics$ {
+    limit_req zone=demo burst=5 nodelay;
+    set $upstream ${REGISTRY_UPSTREAM};
+    rewrite ^/api/registry/(.*)$ /$1 break;
+    proxy_pass $upstream;
+  }
+
+  location /api/registry/ {
+    set $upstream ${REGISTRY_UPSTREAM};
+    rewrite ^/api/registry/(.*)$ /$1 break;
+    proxy_pass $upstream;
+  }
+
+  location /api/incidents/ {
+    set $upstream ${INCIDENTS_UPSTREAM};
+    rewrite ^/api/incidents/(.*)$ /$1 break;
+    proxy_pass $upstream;
+  }
+
+  # Lets visitors break and heal the demo service from the dashboard.
+  location = /api/demo/chaos {
+    limit_except POST { deny all; }
+    limit_req zone=demo burst=5 nodelay;
+    set $upstream ${DEMO_UPSTREAM};
+    rewrite ^ /chaos break;
+    proxy_pass $upstream;
+  }
+}

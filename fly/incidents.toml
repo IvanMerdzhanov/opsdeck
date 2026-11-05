@@ -1,0 +1,16 @@
+primary_region = "fra"
+
+[env]
+  PORT = "3002"
+  LOG_LEVEL = "info"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[checks.ready]
+  type = "http"
+  port = 3002
+  path = "/ready"
+  interval = "15s"
+  timeout = "3s"

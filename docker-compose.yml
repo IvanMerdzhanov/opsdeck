@@ -1,0 +1,81 @@
+x-node-env: &node-env
+  DATABASE_URL: postgres://opsdeck:opsdeck@postgres:5432/opsdeck
+  REDIS_URL: redis://redis:6379
+  LOG_LEVEL: info
+  # Local-only default; production sets a generated secret (see scripts/fly-deploy.sh).
+  ADMIN_API_KEY: ${ADMIN_API_KEY:-local-dev-admin-key}
+
+x-depends: &depends
+  migrate: { condition: service_completed_successfully }
+  redis: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: opsdeck, POSTGRES_PASSWORD: opsdeck, POSTGRES_DB: opsdeck }
+    ports: ["${POSTGRES_HOST_PORT:-5433}:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opsdeck"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["${REDIS_HOST_PORT:-6380}:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      retries: 20
+
+  migrate:
+    build: { context: ., args: { SERVICE: registry-api } }
+    command: ["node", "db/migrate.js"]
+    environment: *node-env
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  registry-api:
+    build: { context: ., args: { SERVICE: registry-api } }
+    environment: { <<: *node-env, PORT: 3001 }
+    ports: ["3001:3001"]
+    depends_on: *depends
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/ready || exit 1"]
+      interval: 5s
+      retries: 20
+
+  incident-api:
+    build: { context: ., args: { SERVICE: incident-api } }
+    environment: { <<: *node-env, PORT: 3002 }
+    ports: ["3002:3002"]
+    depends_on: *depends
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3002/ready || exit 1"]
+      interval: 5s
+      retries: 20
+
+  monitor-worker:
+    build: { context: ., args: { SERVICE: monitor-worker } }
+    environment: { <<: *node-env, CHECK_INTERVAL_MS: 10000, CHECK_TIMEOUT_MS: 3000 }
+    depends_on: *depends
+
+  demo-target:
+    build: { context: ., args: { SERVICE: demo-target } }
+    ports: ["4000:4000"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 5s
+      retries: 20
+
+  dashboard:
+    build: { context: ., dockerfile: services/dashboard/Dockerfile }
+    ports: ["8080:80"]
+    depends_on:
+      registry-api: { condition: service_healthy }
+      incident-api: { condition: service_healthy }
+
+volumes:
+  pgdata:

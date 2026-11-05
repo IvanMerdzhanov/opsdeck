@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpsDeck</title>
+  <style>
+    :root { --bg:#0f1115; --panel:#181b22; --line:#2a2f3a; --text:#e6e8ee; --muted:#8b93a7; --up:#3fb950; --down:#f85149; --warn:#d29922; --accent:#58a6ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:14px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--text); }
+    header { display:flex; align-items:baseline; gap:16px; padding:16px 24px; border-bottom:1px solid var(--line); }
+    header h1 { margin:0; font-size:18px; }
+    header small { color:var(--muted); }
+    main { display:grid; gap:16px; padding:16px 24px; grid-template-columns: 1fr; max-width:1200px; margin:0 auto; }
+    @media (min-width: 900px) { main { grid-template-columns: 1.4fr 1fr; } .kpis { grid-column: 1 / -1; } }
+    section { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; overflow-x:auto; }
+    h2 { margin:0 0 12px; font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+    .kpis { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:16px; background:none; border:0; padding:0; }
+    .kpi { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; }
+    .kpi b { display:block; font-size:28px; font-variant-numeric: tabular-nums; }
+    .kpi span { color:var(--muted); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:500; }
+    .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; background:var(--muted); }
+    .dot.up { background:var(--up); } .dot.down { background:var(--down); }
+    .tag { font-size:12px; padding:1px 6px; border-radius:4px; border:1px solid var(--line); color:var(--muted); }
+    .tag.open { color:var(--down); border-color:var(--down); } .tag.investigating { color:var(--warn); border-color:var(--warn); } .tag.resolved { color:var(--up); border-color:var(--up); }
+    button, input, select { font:inherit; color:var(--text); background:#0f1115; border:1px solid var(--line); border-radius:6px; padding:6px 10px; }
+    button { cursor:pointer; } button:hover { border-color:var(--accent); }
+    form { display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-top:12px; }
+    .muted { color:var(--muted); }
+    .err { color:var(--down); min-height:1.5em; }
+    .spacer { flex:1; }
+    header { align-items:center; flex-wrap:wrap; }
+    header a { text-decoration:none; }
+    #admin-bar { display:flex; gap:8px; flex-wrap:wrap; padding:12px 24px; border-bottom:1px solid var(--line); }
+    #admin-bar[hidden] { display:none; }
+    .demo { grid-column: 1 / -1; }
+    .demo p { margin:0 0 12px; }
+    .demo button { margin:0 8px 8px 0; }
+    @media (max-width: 600px) { header, main, #admin-bar { padding-left:16px; padding-right:16px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>OpsDeck</h1><small>internal service toolchain · auto-refresh 10s</small>
+    <span class="spacer"></span>
+    <a class="muted" href="https://github.com/IvanMerdzhanov/opsdeck" target="_blank" rel="noopener">source ↗</a>
+    <button id="admin-toggle" type="button">Admin</button>
+  </header>
+  <div id="admin-bar" hidden>
+    <input id="admin-key" type="password" placeholder="admin API key" autocomplete="off" />
+    <button id="admin-save" type="button">Use key</button>
+    <button id="admin-clear" type="button">Sign out</button>
+    <span class="muted" id="admin-state"></span>
+  </div>
+  <main>
+    <div class="kpis" id="kpis"></div>
+    <section class="demo">
+      <h2>Try it</h2>
+      <p class="muted">This is a live demo. Break <b>demo-target</b> and watch OpsDeck detect it, open an incident and resolve it when the service recovers.</p>
+      <button data-chaos="break" type="button">💥 Break demo-target</button>
+      <button data-chaos="slow" type="button">🐢 Make it slow (4s)</button>
+      <button data-chaos="heal" type="button">🩹 Heal it</button>
+      <span class="muted" id="demo-state"></span>
+    </section>
+    <section>
+      <h2>Services</h2>
+      <table><thead><tr><th>Service</th><th>Env</th><th>Owner</th><th>Latency</th><th>24h uptime</th><th></th></tr></thead><tbody id="services"></tbody></table>
+      <form id="register" hidden>
+        <input name="name" placeholder="name" required />
+        <input name="url" placeholder="https://…/health" required />
+        <input name="owner" placeholder="owner team" required />
+        <select name="environment"><option>dev</option><option>staging</option><option>prod</option></select>
+        <button>Register service</button>
+      </form>
+      <div class="err" id="register-error"></div>
+    </section>
+    <section>
+      <h2>Incidents</h2>
+      <table><thead><tr><th>Incident</th><th>Status</th><th>Opened</th></tr></thead><tbody id="incidents"></tbody></table>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

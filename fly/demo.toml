@@ -1,0 +1,8 @@
+primary_region = "fra"
+
+[env]
+  PORT = "4000"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

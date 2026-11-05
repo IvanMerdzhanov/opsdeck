@@ -1,0 +1,20 @@
+primary_region = "fra"
+
+[deploy]
+  # Runs once per deploy, before new machines start: schema migrations.
+  release_command = "node db/migrate.js"
+
+[env]
+  PORT = "3001"
+  LOG_LEVEL = "info"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[checks.ready]
+  type = "http"
+  port = 3001
+  path = "/ready"
+  interval = "15s"
+  timeout = "3s"

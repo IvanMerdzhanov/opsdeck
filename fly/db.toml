@@ -1,0 +1,18 @@
+# PostgreSQL 16 on a Fly volume. Internal only: no public services.
+primary_region = "fra"
+
+[build]
+  image = "postgres:16-alpine"
+
+[env]
+  POSTGRES_USER = "opsdeck"
+  POSTGRES_DB = "opsdeck"
+  PGDATA = "/var/lib/postgresql/data/pgdata"
+
+[mounts]
+  source = "pgdata"
+  destination = "/var/lib/postgresql/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

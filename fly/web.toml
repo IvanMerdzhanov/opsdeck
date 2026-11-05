@@ -1,0 +1,22 @@
+# The only public app: dashboard + reverse proxy to the internal APIs.
+primary_region = "fra"
+
+[env]
+  RESOLVER = "[fdaa::3]:53 valid=10s ipv6=on"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "3s"
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

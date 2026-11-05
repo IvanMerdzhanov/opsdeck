@@ -1,0 +1,10 @@
+primary_region = "fra"
+
+[env]
+  CHECK_INTERVAL_MS = "15000"
+  CHECK_TIMEOUT_MS = "3000"
+  LOG_LEVEL = "info"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
