@@ -38,9 +38,43 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  e2e-all-in-one:
+    name: End-to-end smoke test (all-in-one build, what Render deploys)
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: opsdeck, POSTGRES_PASSWORD: opsdeck, POSTGRES_DB: opsdeck }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U opsdeck" --health-interval 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -f deploy/all-in-one.Dockerfile -t opsdeck-aio .
+      - name: Start
+        run: |
+          docker run -d --name aio --network host \
+            -e DATABASE_URL=postgres://opsdeck:opsdeck@localhost:5432/opsdeck \
+            -e REDIS_URL=redis://localhost:6379 \
+            -e ADMIN_API_KEY=ci-admin-key -e CHECK_INTERVAL_MS=10000 opsdeck-aio
+          for i in $(seq 1 60); do curl -sf localhost:10000/healthz && exit 0; sleep 1; done; exit 1
+      - name: Smoke test
+        run: bash scripts/smoke.sh
+        env:
+          REGISTRY: http://localhost:10000/api/registry
+          INCIDENTS: http://localhost:10000/api/incidents
+          CHAOS_URL: http://localhost:10000/api/demo/chaos
+      - name: Logs on failure
+        if: failure()
+        run: docker logs aio
+
   publish:
     name: Build & push images
-    needs: e2e
+    needs: [e2e, e2e-all-in-one]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write }
@@ -64,20 +98,3 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
-
-  deploy:
-    name: Deploy to Fly.io
-    needs: e2e
-    # Runs only on main, and only once the repo has a FLY_APP_PREFIX variable configured.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.FLY_APP_PREFIX != ''
-    runs-on: ubuntu-latest
-    environment: production
-    concurrency: { group: deploy-production, cancel-in-progress: false }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@v1
-      - name: Deploy application services
-        run: bash scripts/fly-deploy.sh --apps-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-          FLY_APP_PREFIX: ${{ vars.FLY_APP_PREFIX }}

@@ -23,7 +23,7 @@ Tech debt is ranked in the **same list** as features. It competes for the same c
 | OD-7 | CI pipeline: lint, unit tests, e2e smoke test, image publishing | E5 |
 | OD-9 | **Authentication** for write endpoints: admin API key; APIs internal-only behind the dashboard proxy | E5 |
 | OD-18 | SSRF guard: http(s) only, no redirects, private/link-local/metadata ranges blocked unless allow-listed, generic error codes; addresses validated at connect time (DNS-rebinding safe) | E5 |
-| OD-20 | Public live demo on Fly.io with continuous deployment from `main` | E5 |
+| OD-20 | Public live demo on free hosting (Render + Neon + Upstash), deployed from `main` only after CI is green | E5 |
 
 ## Ready / prioritised
 | Rank | ID | Item | Type | R | I | C | E | RICE |
@@ -34,9 +34,10 @@ Tech debt is ranked in the **same list** as features. It competes for the same c
 | 5 | OD-12 | **Check retention**: delete or roll up checks older than 30 days (table grows ~8.6k rows/service/day at 10s) | Debt | 10 | 1 | 100% | 1.5 | **6.7** |
 | 6 | OD-13 | Incident detail page with timeline and notes in the dashboard | Feature | 6 | 1 | 100% | 1 | **6.0** |
 | 7 | OD-14 | Split the incident consumer into its own deployable (see ADR-0003) | Debt | 3 | 1 | 70% | 1 | **2.1** |
-| 2 | OD-17 | **Database backups**: nightly `pg_dump` to object storage + a tested restore (the Fly DB is a single node on one volume) | Debt / ops | 10 | 3 | 90% | 1 | **27.0** → do next |
+| 2 | OD-17 | **Database backups**: verify Neon's point-in-time restore window covers us, and run one tested restore | Debt / ops | 10 | 3 | 90% | 1 | **27.0** → do next |
 | 10 | OD-19 | Per-user identity (GitHub/SSO) instead of one shared key, so the incident timeline shows real authors | Feature | 6 | 1 | 80% | 3 | **1.6** |
 | 3 | OD-21 | **Chaos step in e2e**: restart Postgres and Redis mid-run and assert services recover (from the [crash-on-DB-restart postmortem](postmortems/2026-11-05-crash-on-db-restart.md)) | Debt / reliability | 10 | 2 | 90% | 0.5 | **36.0** |
+| 4 | OD-22 | **Keep-warm or upgrade decision**: the free instance sleeps after 15 min idle (~30–50s first load, no monitoring while asleep). Measure recruiter visits before paying | Decision | 3 | 1 | 60% | 0.25 | **7.2** |
 | 8 | OD-15 | Per-service check interval and custom expected status | Feature | 4 | 0.5 | 80% | 1 | **1.6** |
 
 ### Example story with acceptance criteria. OD-8, failure threshold

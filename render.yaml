@@ -1,0 +1,23 @@
+# Render Blueprint: one free web service running OpsDeck all-in-one.
+# Postgres: Neon (free). Redis: Upstash (free). Paste their URLs when Render asks.
+services:
+  - type: web
+    name: opsdeck
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./deploy/all-in-one.Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass   # deploy main only after GitHub CI is green
+    envVars:
+      - key: DATABASE_URL           # Neon connection string (includes ?sslmode=require)
+        sync: false
+      - key: REDIS_URL              # Upstash rediss:// URL
+        sync: false
+      - key: ADMIN_API_KEY
+        generateValue: true         # Render generates it; copy it from the dashboard's Environment tab
+      - key: CHECK_INTERVAL_MS
+        value: "30000"
+      - key: CHECK_TIMEOUT_MS
+        value: "5000"

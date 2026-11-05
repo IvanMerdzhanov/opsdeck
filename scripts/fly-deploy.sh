@@ -2,7 +2,7 @@
 # Deploys OpsDeck to Fly.io as 7 small apps that talk over Fly's private network (6PN).
 #
 #   FLY_APP_PREFIX=opsdeck-ivan scripts/fly-deploy.sh            # first run: infra + secrets + apps
-#   FLY_APP_PREFIX=opsdeck-ivan scripts/fly-deploy.sh --apps-only  # redeploy code (used by CI)
+#   FLY_APP_PREFIX=opsdeck-ivan scripts/fly-deploy.sh --apps-only  # redeploy code only
 #
 # Only <prefix>-web is public. Generated secrets are kept in .fly-secrets (git-ignored, chmod 600)
 # so reruns reuse them.

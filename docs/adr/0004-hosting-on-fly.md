@@ -1,6 +1,8 @@
 # ADR-0004: Host the public demo on Fly.io, one app per service, private networking
 
-**Status:** Accepted · **Date:** 2026-11-05
+**Status:** Superseded for the public demo by [ADR-0005](0005-free-single-service-hosting.md) · **Date:** 2026-11-05
+
+> Kept as the reference production topology. `fly/` and `scripts/fly-deploy.sh` still work with a paid Fly account.
 
 ## Context
 OpsDeck needs a public URL that a recruiter can open and use, while keeping the real architecture

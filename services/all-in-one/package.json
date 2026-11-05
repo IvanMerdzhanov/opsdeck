@@ -1,0 +1,17 @@
+{
+  "name": "@opsdeck/all-in-one",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Runs every OpsDeck module in one process, for free single-service hosting (see ADR-0005).",
+  "scripts": { "start": "node src/server.js" },
+  "dependencies": {
+    "@opsdeck/demo-target": "*",
+    "@opsdeck/incident-api": "*",
+    "@opsdeck/monitor-worker": "*",
+    "@opsdeck/registry-api": "*",
+    "@opsdeck/shared": "*",
+    "bullmq": "^5.56.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0"
+  }
+}

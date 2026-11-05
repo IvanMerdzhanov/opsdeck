@@ -3,7 +3,8 @@
 An internal **service toolchain**: register the services your team owns, monitor their health
 automatically, get incidents opened and resolved on state changes, and track MTTR and uptime.
 
-**Live demo:** https://FLY_APP_PREFIX-web.fly.dev. Press **Break demo-target** and watch it happen.
+**Live demo:** _(link added after first deploy)_. Press **Break demo-target** and watch it happen.
+Runs on free hosting, so the first load after idle takes ~30–50s while it wakes up.
 
 Built as a portfolio project for **technical product ownership**. The code is half of it;
 the [product docs](#product-docs) show how it is prioritised, decided and operated.
@@ -37,6 +38,7 @@ the [product docs](#product-docs) show how it is prioritised, decided and operat
 | `incident-api` | 3002 | Consumes events into incidents, incident workflow, metrics |
 | `demo-target` | 4000 | A breakable service for demos (`POST /chaos`) |
 | `dashboard` | 8080 | Static UI (nginx proxies `/api/*`) |
+| `all-in-one` | 10000 | All of the above in one process, for single-service free hosting |
 
 **Stack:** Node.js 22, Express 5, BullMQ, PostgreSQL 16, Redis 7, Zod, Pino, Vitest, Docker, GitHub Actions.
 
@@ -63,22 +65,24 @@ curl -XPATCH localhost:3002/incidents/<id> -H 'content-type: application/json' \
 
 ## Security model
 
-- The **only public app is the dashboard** (nginx). The APIs, worker, Postgres and Redis are only on Fly's private network.
+- **One public entrypoint.** In the microservice deploy that's the nginx dashboard (APIs, DB and Redis stay private). In the all-in-one deploy the demo target listens on loopback only.
 - **Reads are public; writes need an admin API key** (`x-api-key`, constant-time compare). With no key configured, writes are disabled, not open.
 - Public demo actions (breaking demo-target, running a check) are **rate-limited** at the proxy.
 - The monitor **won't call private, loopback, link-local or metadata addresses**, doesn't follow redirects, validates addresses at connect time (so DNS rebinding can't bypass it), and stores only generic error codes (except allow-listed hosts like demo-target).
 - Known gaps, prioritised in the backlog: DB backups (OD-17), per-user identity (OD-19).
 
-## Deploy (Fly.io)
+## Deploy
 
-```bash
-brew install flyctl && fly auth login
-FLY_APP_PREFIX=opsdeck-<you> scripts/fly-deploy.sh    # first time: creates 7 apps, volume, secrets
-```
+**Free (current live demo):** Render free web service + Neon Postgres + Upstash Redis, running every
+module in one process (`services/all-in-one`, [ADR-0005](docs/adr/0005-free-single-service-hosting.md)).
+1. Create a free Neon database and a free Upstash Redis database; copy their connection URLs.
+2. Render → **New → Blueprint** → pick this repo. It reads `render.yaml` and asks for `DATABASE_URL` and `REDIS_URL`.
+3. Render generates `ADMIN_API_KEY`; copy it from the service's **Environment** tab into the dashboard's Admin box.
 
-After that, every push to `main` that passes CI redeploys automatically. Setup:
-`fly tokens create deploy` → repo secret `FLY_API_TOKEN`, and repo variable `FLY_APP_PREFIX`.
-See [ADR-0004](docs/adr/0004-hosting-on-fly.md) for the hosting decision and costs.
+Pushes to `main` deploy only after CI is green (`autoDeployTrigger: checksPass`).
+
+**Production-like (paid):** each service as its own app on Fly.io, private networking, one public proxy.
+`FLY_APP_PREFIX=opsdeck-<you> scripts/fly-deploy.sh`. See [ADR-0004](docs/adr/0004-hosting-on-fly.md).
 
 ## Test
 
